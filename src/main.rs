@@ -1,7 +1,10 @@
 mod ast;
+mod parsing;
 mod scheme_funcs;
+mod tests;
 
 use ast::cons::cons::Cons;
+use parsing::tokenizer::tokenizer;
 
 fn main() {
     let mut x = "hey";
@@ -26,5 +29,8 @@ fn main() {
     let v = vec!["display", "hola"];
     let dc = Cons::new_list(&v);
     dc.eval();
-    4;
+
+    for (char_i, (i, c)) in "abcdefghi".char_indices().enumerate() {
+        println!("char_i: {}, i: {}, c: {}", char_i, i, c);
+    }
 }
