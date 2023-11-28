@@ -3,13 +3,13 @@ pub mod scheme_funcs {
     use phf::phf_map;
     use std::rc::Rc;
 
-    type Func = fn(Rc<Cons>) -> Result<Rc<Cons>, &str>;
+    type Func<'a> = fn(Rc<Cons>) -> Result<Rc<Cons>, &'a str>;
 
     pub const FUNCTIONS: phf::Map<&'static str, Func> = phf_map!(
         "display" => display as Func,
     );
 
-    fn display(c: Rc<Cons>) -> Result<Rc<Cons>, &str> {
+    fn display<'a>(c: Rc<Cons>) -> Result<Rc<Cons>, &'a str> {
         if let Cons::Pair(ca, cd) = c.as_ref() {
             assert!(cd.is_nil());
             if let Result::Ok(s) = ca.val() {
