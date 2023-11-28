@@ -13,11 +13,11 @@ pub mod cons {
         pub fn nil() -> Rc<Cons> {
             Rc::new(Cons::Nil)
         }
-        
+
         /*  CAREFUL, CAR AND CONS HERE DON'T WORK EXACLY LIKE IT WOULD IN SCHEME
-            here (car 7) would work, as 7 is, actually (7 nil), this won't happen 
-            in the real definitions of car and cdr
-         */
+           here (car 7) would work, as 7 is, actually (7 nil), this won't happen
+           in the real definitions of car and cdr
+        */
 
         pub fn car(&self) -> Result<Rc<Cons>, &str> {
             if let Cons::Pair(c1, _) = self {
@@ -61,13 +61,12 @@ pub mod cons {
             }
         }
 
-
         pub fn eval<'b>(&self) -> Result<Rc<Cons>, &'b str> {
             match self {
                 Cons::Nil => Ok(Cons::nil()),
                 Cons::Val(s) => Ok(Cons::new_val(s)),
                 Cons::Pair(ca, cd) => {
-                    // we suppose we eval on the go as we parse inner expressions, 
+                    // we suppose we eval on the go as we parse inner expressions,
                     //so everything found should already have been evaluated
 
                     let procedure = ca.val().unwrap_or_else(|e| {
@@ -98,7 +97,7 @@ pub mod cons {
             Cons::new_list_i(vec, 0)
         }
 
-        fn new_list_i(vec: &Vec<&str>, i: usize) -> Rc<Cons> {
+        fn new_list_i(vec: &Vec<&str>, i: usize) -> Rc<Self> {
             if i < vec.len() {
                 let c1 = Cons::new_val(
                     vec.get(i)
