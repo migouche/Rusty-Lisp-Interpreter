@@ -3,6 +3,19 @@ pub mod cons {
     use std::fmt::{Debug, Formatter};
     use std::rc::Rc;
 
+    pub enum ValType
+    {
+        Bool(bool),
+
+        Int(i64),
+        Real(f64),
+        Rational(i64, i64),
+        Complex(i64, i64),
+
+        Char(char),
+        
+    }
+
     pub enum Cons {
         Pair(Rc<Cons>, Rc<Cons>),
         Val(String),

@@ -28,6 +28,8 @@ pub mod tokenizer {
         ")" => (Token::CloseParens, 1),
     );
 
+    const SPECIAL_PROCEDURES: &[&str] = &["+", "-", "*", "/", "="];
+
     impl StringStream {
         pub fn new(s: &str) -> StringStream {
             StringStream(s.to_string()) // we reverse for easier popping
@@ -84,8 +86,8 @@ pub mod tokenizer {
     fn tokenize_expression(s: &str) -> Token {
         use AtomType::*;
         use Token::*;
-        if (s.starts_with('"')) {
-            if (!s.ends_with('"')) {
+        if s.starts_with('"') {
+            if !s.ends_with('"') {
                 panic!("expected  \" to close string: {}", s);
             }
             Atom(AtomType::String(s[1..s.len() - 1].to_string()))
@@ -100,8 +102,11 @@ pub mod tokenizer {
             } else {
                 panic!("Couldn't parse: {}", s)
             }
-        } else {
+        } else if s.chars().nth(0).unwrap().is_alphabetic() || SPECIAL_PROCEDURES.contains(&s){
             Procedure(s.to_string())
+        }
+        else {
+            panic!("Couldn't parse: {}", s)
         }
     }
 
