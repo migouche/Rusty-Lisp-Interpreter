@@ -2,12 +2,12 @@ pub mod parse {
     use std::rc::Rc;
 
     use crate::{
-        ast::cons::cons::Cons,
+        ast::cons::cons::ValType,
         parsing::tokenizer::tokenizer::{tokenize, AtomType, Token},
     };
 
-    fn parse_tokens(v: &mut Vec<Token>) -> Vec<Rc<Cons>> {
-        let mut tokens: Vec<Rc<Cons>> = Vec::new();
+    fn parse_tokens(v: &mut Vec<Token>) -> Vec<Rc<ValType>> {
+        let mut tokens: Vec<Rc<ValType>> = Vec::new();
 
         while !v.is_empty() {
             tokens.push(parse_next_token(v))
@@ -16,14 +16,14 @@ pub mod parse {
         tokens
     }
 
-    fn parse_next_token(v: &mut Vec<Token>) -> Rc<Cons> {
+    fn parse_next_token(v: &mut Vec<Token>) -> Rc<ValType> {
         if v.is_empty() {
             panic!("Unexpected EOF");
         }
 
         match (v.remove(0)) {
             Token::OpenParens(_) => parse_list(v),
-            Token::CloseParens => Cons::nil(),
+            Token::CloseParens => ValType::nil(),
             Token::Procedure(s) => Cons::new_val(&s),
             Token::Atom(a) => parse_atom(a),
         }
