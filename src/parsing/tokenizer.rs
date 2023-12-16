@@ -102,10 +102,9 @@ pub mod tokenizer {
             } else {
                 panic!("Couldn't parse: {}", s)
             }
-        } else if s.chars().nth(0).unwrap().is_alphabetic() || SPECIAL_PROCEDURES.contains(&s){
+        } else if s.chars().nth(0).unwrap().is_alphabetic() || SPECIAL_PROCEDURES.contains(&s) {
             Procedure(s.to_string())
-        }
-        else {
+        } else {
             panic!("Couldn't parse: {}", s)
         }
     }

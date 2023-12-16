@@ -21,37 +21,27 @@ pub mod parse {
             panic!("Unexpected EOF");
         }
 
-        match (v.remove(0)) {
+        match v.remove(0) {
             Token::OpenParens(_) => parse_list(v),
             Token::CloseParens => ValType::nil(),
-            Token::Procedure(s) => Cons::new_val(&s),
-            Token::Atom(a) => parse_atom(a),
+            Token::Procedure(s) => ValType::new_procedure(&s),
+            Token::Atom(a) => ValType::from_atom(&a),
         }
     }
 
-    fn parse_list(v: &mut Vec<Token>) -> Rc<Cons> {
+    fn parse_list(v: &mut Vec<Token>) -> Rc<ValType> {
         if let Token::CloseParens = v
             .get(0)
             .unwrap_or_else(|| panic!("Unexpected EOF parsing list"))
         {
             v.remove(0);
-            Cons::nil()
+            ValType::nil()
         } else {
-            Cons::new_pair(parse_next_token(v), parse_list(v))
+            ValType::cons(parse_next_token(v), parse_list(v))
         }
     }
 
-    fn parse_atom(a: AtomType) -> Rc<Cons> {
-        match a {
-            // TODO change this to something more meaningful
-            AtomType::Bool(b) => Cons::new_val(&b.to_string()),
-            AtomType::Char(c) => Cons::new_val(&c.to_string()),
-            AtomType::Number(n) => Cons::new_val(&n.to_string()),
-            AtomType::String(s) => Cons::new_val(&s),
-        }
-    }
-
-    pub fn parse(s: &str) -> Vec<Rc<Cons>> {
+    pub fn parse(s: &str) -> Vec<Rc<ValType>> {
         parse_tokens(&mut tokenize(s))
     }
 }
