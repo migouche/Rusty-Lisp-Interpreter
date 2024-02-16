@@ -1,121 +1,120 @@
-pub mod tokenizer {
-    use phf::phf_map;
 
-    #[derive(Debug, Clone)]
-    pub enum AtomType {
-        Number(i32),
-        String(String),
-        Bool(bool),
-        Char(char),
+use phf::phf_map;
+
+#[derive(Debug, Clone)]
+pub enum AtomType {
+    Number(i32),
+    String(String),
+    Bool(bool),
+    Char(char),
+}
+
+#[derive(Debug, Clone)]
+pub enum Token {
+    OpenParens(bool), // eval/not eval
+    CloseParens,
+    Atom(AtomType),
+    Procedure(String),
+}
+
+pub struct StringStream(String);
+
+const SPLIT_CHARS: &[char] = &[' ', '\n', '\t', '\r'];
+const UNIQUE_CHARS: &[char] = &['\'', '(', ')'];
+
+const UNIQUE_PATTERNS: phf::Map<&'static str, (Token, usize)> = phf_map!(
+    "(" => (Token::OpenParens(true), 1),
+    "'(" => (Token::OpenParens(false), 2),
+    ")" => (Token::CloseParens, 1),
+);
+
+const SPECIAL_PROCEDURES: &[&str] = &["+", "-", "*", "/", "="];
+
+impl StringStream {
+    pub fn new(s: &str) -> StringStream {
+        StringStream(s.to_string()) // we reverse for easier popping
     }
 
-    #[derive(Debug, Clone)]
-    pub enum Token {
-        OpenParens(bool), // eval/not eval
-        CloseParens,
-        Atom(AtomType),
-        Procedure(String),
+    pub fn get_char(&mut self) -> Option<char> {
+        if self.is_eof() {
+            None
+        } else {
+            Some(self.0.remove(0))
+        }
     }
 
-    pub struct StringStream(String);
+    pub fn peek_char(&self) -> Option<char> {
+        self.0.chars().nth(0)
+    }
 
-    const SPLIT_CHARS: &[char] = &[' ', '\n', '\t', '\r'];
-    const UNIQUE_CHARS: &[char] = &['\'', '(', ')'];
+    pub fn is_eof(&self) -> bool {
+        self.0.is_empty()
+    }
 
-    const UNIQUE_PATTERNS: phf::Map<&'static str, (Token, usize)> = phf_map!(
-        "(" => (Token::OpenParens(true), 1),
-        "'(" => (Token::OpenParens(false), 2),
-        ")" => (Token::CloseParens, 1),
-    );
-
-    const SPECIAL_PROCEDURES: &[&str] = &["+", "-", "*", "/", "="];
-
-    impl StringStream {
-        pub fn new(s: &str) -> StringStream {
-            StringStream(s.to_string()) // we reverse for easier popping
-        }
-
-        pub fn get_char(&mut self) -> Option<char> {
-            if self.is_eof() {
-                None
-            } else {
-                Some(self.0.remove(0))
-            }
-        }
-
-        pub fn peek_char(&self) -> Option<char> {
-            self.0.chars().nth(0)
-        }
-
-        pub fn is_eof(&self) -> bool {
-            self.0.is_empty()
-        }
-
-        pub fn consume_whitespaces(&mut self) {
-            if SPLIT_CHARS.contains(&self.peek_char().unwrap()) {
-                self.get_char();
-                self.consume_whitespaces();
-            }
-        }
-
-        fn get_next_token(&mut self) -> Token {
+    pub fn consume_whitespaces(&mut self) {
+        if SPLIT_CHARS.contains(&self.peek_char().unwrap()) {
+            self.get_char();
             self.consume_whitespaces();
-
-            for (key, (token, size)) in UNIQUE_PATTERNS.entries() {
-                if self.0.starts_with(key) {
-                    for _ in 0..*size {
-                        self.get_char();
-                    }
-                    return token.clone();
-                }
-            }
-
-            // we suppose we now have an expression
-
-            let mut s = String::new();
-            while !SPLIT_CHARS.contains(&self.peek_char().unwrap())
-                && !UNIQUE_CHARS.contains(&self.peek_char().unwrap())
-            {
-                s.push(self.get_char().unwrap());
-            }
-
-            tokenize_expression(&s)
         }
     }
 
-    fn tokenize_expression(s: &str) -> Token {
-        use AtomType::*;
-        use Token::*;
-        if s.starts_with('"') {
-            if !s.ends_with('"') {
-                panic!("expected  \" to close string: {}", s);
+    fn get_next_token(&mut self) -> Token {
+        self.consume_whitespaces();
+
+        for (key, (token, size)) in UNIQUE_PATTERNS.entries() {
+            if self.0.starts_with(key) {
+                for _ in 0..*size {
+                    self.get_char();
+                }
+                return token.clone();
             }
-            Atom(AtomType::String(s[1..s.len() - 1].to_string()))
-        } else if let Ok(i) = s.parse::<i32>() {
-            Atom(Number(i)) // TODO: add all possible numbers
-        } else if s.starts_with('#') {
-            // special chars
-            if s == "#f" {
-                Atom(Bool(false))
-            } else if s == "#t" {
-                Atom(Bool(true))
-            } else {
-                panic!("Couldn't parse: {}", s)
-            }
-        } else if s.chars().nth(0).unwrap().is_alphabetic() || SPECIAL_PROCEDURES.contains(&s) {
-            Procedure(s.to_string())
+        }
+
+        // we suppose we now have an expression
+
+        let mut s = String::new();
+        while !SPLIT_CHARS.contains(&self.peek_char().unwrap())
+            && !UNIQUE_CHARS.contains(&self.peek_char().unwrap())
+        {
+            s.push(self.get_char().unwrap());
+        }
+
+        tokenize_expression(&s)
+    }
+}
+
+fn tokenize_expression(s: &str) -> Token {
+    use AtomType::*;
+    use Token::*;
+    if s.starts_with('"') {
+        if !s.ends_with('"') {
+            panic!("expected  \" to close string: {}", s);
+        }
+        Atom(AtomType::String(s[1..s.len() - 1].to_string()))
+    } else if let Ok(i) = s.parse::<i32>() {
+        Atom(Number(i)) // TODO: add all possible numbers
+    } else if s.starts_with('#') {
+        // special chars
+        if s == "#f" {
+            Atom(Bool(false))
+        } else if s == "#t" {
+            Atom(Bool(true))
         } else {
             panic!("Couldn't parse: {}", s)
         }
+    } else if s.chars().nth(0).unwrap().is_alphabetic() || SPECIAL_PROCEDURES.contains(&s) {
+        Procedure(s.to_string())
+    } else {
+        panic!("Couldn't parse: {}", s)
     }
+}
 
-    pub fn tokenize(s: &str) -> Vec<Token> {
-        let mut stream = StringStream::new(s);
+pub fn tokenize(s: &str) -> Vec<Token> {
+    let mut stream = StringStream::new(s);
 
-        let mut v: Vec<Token> = Vec::new();
-        while !stream.is_eof() {
-            v.push(stream.get_next_token());
-        }
-        v
+    let mut v: Vec<Token> = Vec::new();
+    while !stream.is_eof() {
+        v.push(stream.get_next_token());
     }
+    v
 }

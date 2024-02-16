@@ -1,12 +1,7 @@
-mod ast;
+use crate::parsing::{ast::ValType, parser::parse, tokenizer::tokenize};
+
 mod parsing;
 mod scheme_funcs;
-mod tests;
-
-use ast::cons::cons::ValType;
-use parsing::tokenizer::tokenizer;
-
-use crate::parsing::{parser::parse::parse, tokenizer::tokenizer::tokenize};
 
 fn main() {
     let mut x = "hey";
@@ -39,4 +34,9 @@ fn main() {
     println!("{:?}", sc);
     let scheme = parse(r#"(car( + "3" 2 #t))"#);
     println!("{:?}", scheme);
+
+    parse(r#"(display (cdr (cons "aaaa" "bbbbbb")))"#)
+        .get(0)
+        .unwrap()
+        .eval();
 }
